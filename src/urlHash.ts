@@ -1,0 +1,26 @@
+import LZString from "lz-string";
+
+export const defaultHash =
+  "JYWwDg9gTgLgBAbzgVwM4FMDKMCGN0A0KGAogGZnoDG8AvnGVBCHAORTo42sBQoksOKhgBPADboAJgyYtWw8VIC0VZpAB26dTFS8eosOjgBJfCwC8iHnDjBJALjjrkIAEboo1uDGAwJj4ShgdQBzL0hgnQB+R2c3DzgAHydkMTEvNA8YoRgg0KSUtK8fEHRYl3dPGxL0AH0cEIgA3OCwm1UQUu1UWtVkbXL4qu8RQ2a8tpQoMWzA1q9JZhxg2ZbQnloeHlV1YTgQ9BhTdBBUOEsACjAGspShgEpHAAVZYAwAHmOQAG0AXQA+c7-LyUGBUAAWFwABuCYDAwKh7AB6JE4MDAAB04PUYAA7jgMR0kQA3AAMSM0uNQSIAJAhrgdaBiAFaoCDqKH3Lw2DEwcFaC4XDioDQYe5AuDC0XoFls9QXe5cmw8qh4CEKrY7PYAGWCAGtzjlFJIMTgoV5VGJoM10OgxK4xMh0ABuYroAAeMCUkmo0DwwHZsXZLp45u27L2AFlDjhDQoJCaRTgORaIFaoI4QlAcCJXTYyOyvahgAAvW6oEA4NKurwAMjgAGo4LX7PZ3AWOFZlXAdvgBmxEqw88rK1AQsFHAAOMDu4ebMNa+BfQ0XJC+E5wWiONdmRzL2ji8yAi5ed5iYDA7vvXXqA3gjhkcwIdcgDHIab0XBjw7mABEtQdZM9V-SU7T-dQIAgQxNCgJxoHQSgoA4KBf0vbtEBfXlfAkTYryRG89TQmx3kkYBiSI5V3mjXB-mfMwMQibp6EYnR3iRaicAo4iOK45VXBEDD6MyKB6Dok4sNKepGlw9C2J47lKJ4sTXw6LodF6CB+hgehVK0Vj2JjCi2NI8jTyRc9gS5cNdngABVMQ41EBM3zEc0bHPYQlHjW4IM0YdR3HdRHFJYdrkkUjQmC4dSJFMQc0zIJJGHEI0SnGdXQXCN4F1PZLiQBkjC3RA4AKwZKk3Q9AQQVMbLgb4X1QIgMCOMxUF+Q1MmwPB0E+Mw-gKZw0n+C5BrEKybEychKBoQVKq7ZUDhak5UCuG57l5fl5War5UCVTciG+ArfnG2wyDgC4AEIGvFDgYHfdQ4CowyrRwCKQgxD65MMrxbvu86FPeezeOU1AMUrMBBRfOaT3Qyjlz1dARCfTC7HoF9kbMegkV4xUZOIpEga8LlNmsvYAGFC2WGDHONDETLckrXrexwAEYADZ0q8St3SUXE7D5Rw2YAFlJTmbACic4BwZAYAgYdXC4PUs009QHDgXFwXXDLNSyuAAAlOB9WDLG8k1+VejwGf5YAQlhRwhenWdwggYsfEDHJgCoPVc2KKCoq8BWveV-o1eCfkghgaK3jAOKREcMgJCdmwqxt9QlAaxwqD0jxh2ZNAfDIEQVELPSAmuLOlHcGBcVtdRtdJ+AACEZdlh6TacqQMVcFv2QZwOlaYEOgz8gPoCN4eQzDD0BHgH0yGlsR4DIfoaADB6AEEwAh8VqvaXXDpuJrDieG52ssTrcHwC4WZO36oAemHKIp7QqY8Xj3gNi2oF44jwQAJn+HrRWCQABy6AqRsX-j-R6JloHEWbnCdkcAYo4AdFIJ8BVzjmEsCzeg7Iybni9k+BUEpmonwOKtA4cAlBwBvrQOByowAcGJApWGbEEGtwYU9GiiACpY1oaSR6BkaKsNkhwpBKC0GSAwTcOA-wcGkjweoAhns9TELmmQm4lCjBNjoQwmwmhPSiLwuI9Q0DjJkXfkiT+Rt345XgAVGRjI4DYwBkiZ+uBghvyJhsIAA";
+
+export const decodeHash = (hash: string) =>
+  LZString.decompressFromEncodedURIComponent(hash) || decodeURIComponent(hash);
+
+const example = decodeHash(defaultHash);
+
+export const getHashCode = () => {
+  if (typeof location === "undefined") return example;
+  if (location.href.endsWith(location.pathname)) return example;
+
+  const hash = location.hash.slice(1);
+  if (!hash) return "";
+
+  return decodeHash(hash);
+};
+
+export const updateHash = (code: string) => {
+  if (typeof history === "undefined") return;
+
+  const hash = code ? LZString.compressToEncodedURIComponent(code) : "";
+  history.replaceState(history.state, "", `#${hash}`);
+};
