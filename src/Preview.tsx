@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 
+import { ShadowRoot } from "./ShadowRoot";
 import { useAsyncRunner } from "./useAsyncRunner";
 import { getHashCode } from "./urlHash";
 
@@ -9,7 +10,7 @@ window.process = { env: {} };
 
 const Preview = () => {
   const [code, setCode] = useState(() => getHashCode());
-  const { element, error, isLoading } = useAsyncRunner({ code });
+  const { element, styleSheets, error, isLoading } = useAsyncRunner({ code });
 
   useEffect(() => {
     const handler = (e: CustomEvent<string>) => {
@@ -23,7 +24,13 @@ const Preview = () => {
   return (
     <>
       {isLoading && <div className="preview-loading"></div>}
-      <div className="preview-element">{element}</div>
+      {styleSheets.length > 0 ? (
+        <ShadowRoot className="preview-element" styleSheets={styleSheets}>
+          {element}
+        </ShadowRoot>
+      ) : (
+        <div className="preview-element">{element}</div>
+      )}
       {error && <pre className="preview-error">{error}</pre>}
     </>
   );

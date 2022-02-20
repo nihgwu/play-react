@@ -13,8 +13,8 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      react: "https://cdn.skypack.dev/react",
-      "react-dom": "https://cdn.skypack.dev/react-dom",
+      react: "https://esm.sh/react",
+      "react-dom": "https://esm.sh/react-dom",
     },
   },
 });

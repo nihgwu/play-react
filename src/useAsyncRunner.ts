@@ -12,7 +12,8 @@ import { Runner, UseRunnerProps, UseRunnerReturn } from "react-runner";
 const importModuleRegexp = /^import [^'"]* from ['"]([^'"\n ]+)['"]/gm;
 const importCssRegexp = /^import +['"]([^'"\n ]+.css)['"]/gm;
 const remoteRegexp = /^https?:\/\//;
-const remoteCDN = "https://cdn.skypack.dev/";
+const remoteCDN = "https://esm.sh/";
+const cssCDN = "https://cdn.jsdelivr.net/npm/";
 
 const extractImports = (code: string): [string[], string[]] => [
   (code.match(importModuleRegexp) || []).map((x) =>
@@ -56,13 +57,16 @@ const interopRequireDefault = (obj: any) => {
     : obj;
 };
 
-const normalizeModule = (module: string) =>
-  remoteRegexp.test(module) ? module : `${remoteCDN}${module}`;
+const normalizeModule = (module: string) => {
+  if (remoteRegexp.test(module)) return module;
+  if (module.endsWith(".css")) return `${cssCDN}${module}`;
+  return `${remoteCDN}${module}`;
+};
 
 const defaultImportsRevolvor = (
   moduleImports: string[],
   cssImports: string[]
-) => {
+): Promise<[Record<string, any>, CSSStyleSheet[]]> => {
   return Promise.all([
     Promise.all(
       moduleImports.map(
@@ -78,21 +82,20 @@ const defaultImportsRevolvor = (
     ),
     Promise.all(
       cssImports.map((module) => importCss(normalizeModule(module)))
-    ).then((result) => {
-      document.adoptedStyleSheets = result.map((x) => x?.default);
-    }),
-  ]).then((result) => result[0]);
+    ).then((result) => result.map((x) => x?.default).filter(Boolean)),
+  ]).then((result) => result);
 };
 
 export type UseAsyncRunnerProps = UseRunnerProps & {
   resolveImports?: (
     moduleImports: string[],
     cssImports: string[]
-  ) => Promise<Record<string, any>>;
+  ) => Promise<[Record<string, any>, CSSStyleSheet[]]>;
 };
 
 export type UseAsyncRunnerReturn = UseRunnerReturn & {
   isLoading: boolean;
+  styleSheets: CSSStyleSheet[];
 };
 
 export const useAsyncRunner = ({
@@ -102,12 +105,14 @@ export const useAsyncRunner = ({
   resolveImports = defaultImportsRevolvor,
 }: UseAsyncRunnerProps): UseAsyncRunnerReturn => {
   const elementRef = useRef<ReactElement | null>(null);
+  const styleSheetsRef = useRef<CSSStyleSheet[]>([]);
   const scopeRef = useRef(scope);
   scopeRef.current = scope;
 
   const [state, setState] = useState<UseAsyncRunnerReturn>({
     isLoading: false,
     element: null,
+    styleSheets: [],
     error: null,
   });
 
@@ -118,11 +123,12 @@ export const useAsyncRunner = ({
       setState({
         isLoading: true,
         element: disableCache ? null : elementRef.current,
+        styleSheets: disableCache ? [] : styleSheetsRef.current,
         error: null,
       });
     }
     resolveImports(...extractImports(trimmedCode))
-      .then((importsMap) => {
+      .then(([importsMap, styleSheets]) => {
         let normalizedCode = trimmedCode.replace(importCssRegexp, "");
         if ("react-dom" in importsMap) {
           normalizedCode = normalizedCode.replace(
@@ -141,19 +147,22 @@ export const useAsyncRunner = ({
               setState({
                 isLoading: false,
                 element: disableCache ? null : elementRef.current,
+                styleSheets: disableCache ? [] : styleSheetsRef.current,
                 error: error.toString(),
               });
             } else {
               elementRef.current = element;
+              styleSheetsRef.current = styleSheets;
             }
           },
         });
-        setState({ isLoading: false, element, error: null });
+        setState({ isLoading: false, element, styleSheets, error: null });
       })
       .catch((error: Error) => {
         setState({
           isLoading: false,
           element: disableCache ? null : elementRef.current,
+          styleSheets: disableCache ? [] : styleSheetsRef.current,
           error: error.toString().replace(remoteCDN, ""),
         });
       });
